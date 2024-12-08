@@ -154,13 +154,13 @@ app.get("/company/expiration", async (req, res) => {
     S.SUBSCRIPTION_YEAR,
     S.DATE_CREATED,
     S.BEGIN_DATE,
-    S.EXPIRED_DATE,
+    ADD_MONTHS(S.BEGIN_DATE, S.SUBSCRIPTION_YEAR * 12) AS EXPIRED_DATE,
     S.CUSTOMER_ID,
     S.SERIAL_NUMBER  
 FROM
     SUBSCRIPTION S
 WHERE
-    S.EXPIRED_DATE < SYSDATE
+    ADD_MONTHS(S.BEGIN_DATE, S.SUBSCRIPTION_YEAR * 12) < SYSDATE
     AND NOT EXISTS (
         SELECT 1
         FROM REQUEST R
@@ -168,7 +168,7 @@ WHERE
         AND R.REQUEST_TYPE = '회수'
     )
 ORDER BY
-    S.EXPIRED_DATE ASC`
+    EXPIRED_DATE ASC`
     );
 
     await connection.close();
@@ -272,7 +272,7 @@ app.post("/company/expiration/extend", async (req, res) => {
     await connection.execute("SET TRANSACTION READ WRITE");
 
     const expiredDateResult = await connection.execute(
-      "SELECT SUBSCRIPTION_YEAR, EXPIRED_DATE FROM SUBSCRIPTION WHERE SUBSCRIPTION_ID = :subscriptionId",
+      "SELECT SUBSCRIPTION_YEAR FROM SUBSCRIPTION WHERE SUBSCRIPTION_ID = :subscriptionId",
       [subscriptionId]
     );
 
@@ -280,22 +280,17 @@ app.post("/company/expiration/extend", async (req, res) => {
       return res.status(404).json({ error: "Subscription not found" });
     }
 
-    const [prevSubscriptionYear, expiredDate] = expiredDateResult.rows[0];
+    const [prevSubscriptionYear] = expiredDateResult.rows[0];
     const afterSubscriptionYear = prevSubscriptionYear + addSubscriptionYear;
-    const expiredDateTime = new Date(expiredDate);
-    expiredDateTime.setFullYear(expiredDateTime.getFullYear() + addSubscriptionYear);
-    const afterSubscriptionDate = expiredDateTime.toISOString().slice(0, 19).replace("T", " ");
 
     await connection.execute(
       `
       UPDATE SUBSCRIPTION 
-      SET SUBSCRIPTION_YEAR = :afterSubscriptionYear, 
-          EXPIRED_DATE = TO_DATE(:afterSubscriptionDate, 'YYYY-MM-DD HH24:MI:SS') 
+      SET SUBSCRIPTION_YEAR = :afterSubscriptionYear         
       WHERE SUBSCRIPTION_ID = :subscriptionId
       `,
       {
         afterSubscriptionYear,
-        afterSubscriptionDate,
         subscriptionId,
       }
     );
@@ -337,7 +332,7 @@ app.get("/company/subscription", async (req, res) => {
         S.SUBSCRIPTION_YEAR,
         S.DATE_CREATED,
         S.BEGIN_DATE,
-        S.EXPIRED_DATE,
+        ADD_MONTHS(S.BEGIN_DATE, S.SUBSCRIPTION_YEAR * 12) AS EXPIRED_DATE,
         S.CUSTOMER_ID,
         S.SERIAL_NUMBER
       FROM
@@ -636,7 +631,7 @@ app.get("/customer/info/subscription/:customerId", async (req, res) => {
                 S.SUBSCRIPTION_YEAR, 
                 S.DATE_CREATED, 
                 S.BEGIN_DATE, 
-                S.EXPIRED_DATE, 
+                ADD_MONTHS(S.BEGIN_DATE, S.SUBSCRIPTION_YEAR * 12) AS EXPIRED_DATE, 
                 S.CUSTOMER_ID, 
                 S.SERIAL_NUMBER       
 FROM SUBSCRIPTION S
