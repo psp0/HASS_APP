@@ -1240,12 +1240,48 @@ app.post("/worker/request/accept", async (req, res) => {
          VALUES (V_SEQ.NEXTVAL, TO_DATE(:visitDate, 'YYYY-MM-DD HH24:MI'), SYSDATE, :workerId, :requestId)`,
         { visitDate, workerId, requestId }
       );
+      const result = await connection.execute("SELECT SUBSCRIPTION_ID FROM REQUEST WHERE REQUEST_ID = :requestId", {
+        requestId,
+      });
+
+      const subscriptionId = result.rows[0][0];
+
+      await connection.execute(
+        `UPDATE SUBSCRIPTION SET BEGIN_DATE = TO_DATE(:visitDate, 'YYYY-MM-DD HH24:MI') WHERE SUBSCRIPTION_ID = :subscriptionId`,
+        {
+          visitDate,
+          subscriptionId,
+        }
+      );
     } else {
+      const preferDateResult = await connection.execute(
+        `SELECT PREFER_DATE FROM REQUEST_PREFERENCE_DATE WHERE REQUEST_ID = :requestId AND ROWNUM = 1`,
+        { requestId }
+      );
+
+      const preferDate = preferDateResult.rows[0]?.PREFER_DATE;
+
       await connection.execute(
         `INSERT INTO VISIT (VISIT_ID, VISIT_DATE, DATE_CREATED, WORKER_ID, REQUEST_ID)
-         VALUES (V_SEQ.NEXTVAL, (SELECT PREFER_DATE FROM REQUEST_PREFERENCE_DATE WHERE REQUEST_ID = :requestId AND ROWNUM = 1), SYSDATE, :workerId, :requestId)`,
-        { workerId, requestId }
+         VALUES (V_SEQ.NEXTVAL, TO_DATE(:preferDate, 'YYYY-MM-DD HH24:MI'), SYSDATE, :workerId, :requestId)`,
+        { preferDate, workerId, requestId }
       );
+
+      const result = await connection.execute("SELECT SUBSCRIPTION_ID FROM REQUEST WHERE REQUEST_ID = :requestId", {
+        requestId,
+      });
+
+      const subscriptionId = result.rows[0].SUBSCRIPTION_ID;
+
+      if (preferDate) {
+        await connection.execute(
+          `UPDATE SUBSCRIPTION SET BEGIN_DATE = TO_DATE(:preferDate, 'YYYY-MM-DD HH24:MI') WHERE SUBSCRIPTION_ID = :subscriptionId`,
+          {
+            preferDate,
+            subscriptionId,
+          }
+        );
+      }
     }
 
     await connection.execute(`UPDATE REQUEST SET REQUEST_STATUS = '방문예정' WHERE REQUEST_ID = :requestId`, {
