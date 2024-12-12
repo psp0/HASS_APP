@@ -260,7 +260,7 @@ app.post("/company/expiration/return", async (req, res) => {
 });
 
 app.post("/company/expiration/extend", async (req, res) => {
-  const { subscriptionId, addSubscriptionYear } = req.body;
+  const { subscriptionId, addYears } = req.body;
   let dbConnection = null;
   let sshTunnel = null;
 
@@ -280,8 +280,9 @@ app.post("/company/expiration/extend", async (req, res) => {
       return res.status(404).json({ error: "Subscription not found" });
     }
 
-    const [prevSubscriptionYear] = expiredDateResult.rows[0];
-    const afterSubscriptionYear = prevSubscriptionYear + addSubscriptionYear;
+    const prevSubscriptionYear = Number(expiredDateResult.rows[0][0]);
+    const newaddYears = Number(addYears);
+    const afterSubscriptionYear = prevSubscriptionYear + newaddYears;
 
     await connection.execute(
       `
@@ -339,7 +340,7 @@ app.get("/company/subscription", async (req, res) => {
         SUBSCRIPTION S
       WHERE S.SERIAL_NUMBER IN (SELECT SERIAL_NUMBER FROM PRODUCT WHERE PRODUCT_STATUS = '구독중')
       ORDER BY
-        DATE_CREATED DESC`
+        S.SUBSCRIPTION_ID`
     );
 
     await connection.close();
