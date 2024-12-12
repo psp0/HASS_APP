@@ -182,7 +182,7 @@ class CustomerModelPage extends StatelessWidget {
                                             customerId);
                                       },
                                       child: const Text(
-                                        '자세히',
+                                        '더보기',
                                         style: TextStyle(fontSize: 12),
                                         softWrap: false,
                                       ),

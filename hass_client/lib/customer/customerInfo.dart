@@ -436,7 +436,7 @@ class _RepairRequestPageState extends State<RepairRequestPage> {
           child: TextField(
             controller: _additionalCommentController,
             decoration: InputDecoration(
-              hintText: '기타 코멘트',
+              hintText: '고장 증상',
               border: OutlineInputBorder(),
             ),
           ),

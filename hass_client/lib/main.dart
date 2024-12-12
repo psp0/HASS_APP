@@ -23,6 +23,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'HASS',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.blue,
         scaffoldBackgroundColor: Colors.blue.shade50,
@@ -493,7 +494,7 @@ class _CustomerSignupPageState extends State<CustomerSignupPage> {
                   _signup(context);
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('모든 필드를 채워주세요')),
+                    const SnackBar(content: Text('조건을 다시 확인해주세요')),
                   );
                 }
               },
@@ -622,7 +623,7 @@ class WorkerLoginPage extends StatelessWidget {
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Invalid Worker Credentials')),
+          const SnackBar(content: Text('다시 확인해주세요')),
         );
       }
     } catch (e) {
@@ -690,7 +691,7 @@ class CompanyLoginPage extends StatelessWidget {
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Invalid Company Credentials')),
+          const SnackBar(content: Text('다시 확인해주세요')),
         );
       }
     } catch (e) {
@@ -711,7 +712,7 @@ class CompanyLoginPage extends StatelessWidget {
           children: [
             TextField(
               controller: _idController,
-              decoration: const InputDecoration(labelText: '회사 ID'),
+              decoration: const InputDecoration(labelText: 'ID'),
             ),
             TextField(
               controller: _pwController,
